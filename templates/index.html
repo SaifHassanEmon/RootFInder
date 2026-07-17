@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Find roots of equations using Bisection and Newton-Raphson methods with full iteration tables and step-by-step solutions.">
+    <title>Root Finder — Numerical Methods Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Animated background elements -->
+    <div class="bg-grid"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+    <div class="glow glow-3"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header" id="app-header">
+            <div class="header-icon">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                    <path d="M4 28 Q12 4 18 18 Q24 32 32 8" stroke="url(#grad)" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <line x1="2" y1="18" x2="34" y2="18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="3 3"/>
+                    <circle cx="14" cy="18" r="3" fill="url(#grad)"/>
+                    <circle cx="28" cy="18" r="3" fill="url(#grad)"/>
+                    <defs>
+                        <linearGradient id="grad" x1="0" y1="0" x2="36" y2="36">
+                            <stop offset="0%" stop-color="#6366f1"/>
+                            <stop offset="100%" stop-color="#a855f7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div>
+                <h1>Root Finder</h1>
+                <p class="subtitle">Numerical Methods Calculator</p>
+            </div>
+        </header>
+
+        <!-- Step 1: Equation Input -->
+        <section class="card input-card" id="input-section">
+            <div class="card-header">
+                <span class="card-badge">01</span>
+                <h2>Define Your Equation</h2>
+            </div>
+
+            <div class="input-group" id="equation-group">
+                <label for="equation-input">f(x) =</label>
+                <div class="equation-input-wrapper">
+                    <input
+                        type="text"
+                        id="equation-input"
+                        placeholder="e.g.  x**3 - 2*x - 5"
+                        spellcheck="false"
+                        autocomplete="off"
+                    >
+                    <div class="input-hint">
+                        Use <kbd>**</kbd> for power, <kbd>*</kbd> for multiply, <kbd>sqrt()</kbd>, <kbd>sin()</kbd>, <kbd>cos()</kbd>, <kbd>log()</kbd>, <kbd>exp()</kbd>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-bar" id="preview-bar">
+                <span class="preview-label">Preview:</span>
+                <span class="preview-expr" id="preview-expr">—</span>
+                <span class="preview-status" id="preview-status"></span>
+            </div>
+        </section>
+
+        <!-- Step 2: Method Selection -->
+        <section class="card method-card" id="method-section">
+            <div class="card-header">
+                <span class="card-badge">02</span>
+                <h2>Choose Method</h2>
+            </div>
+
+            <div class="method-options" id="method-options">
+                <button class="method-btn active" id="btn-bisection" data-method="bisection">
+                    <div class="method-icon">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <rect x="3" y="3" width="22" height="22" rx="4" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="14" y1="5" x2="14" y2="23" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/>
+                            <circle cx="9" cy="10" r="2" fill="currentColor" opacity="0.6"/>
+                            <circle cx="19" cy="18" r="2" fill="currentColor" opacity="0.6"/>
+                            <circle cx="14" cy="14" r="2.5" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="method-info">
+                        <span class="method-name">Bisection Method</span>
+                        <span class="method-desc">Reliable bracket-based approach</span>
+                    </div>
+                    <span class="method-check">✓</span>
+                </button>
+
+                <button class="method-btn" id="btn-newton" data-method="newton">
+                    <div class="method-icon">
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                            <path d="M4 22 Q10 6 14 14 Q18 22 24 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                            <line x1="8" y1="22" x2="20" y2="4" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.6"/>
+                            <circle cx="16" cy="11" r="2.5" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="method-info">
+                        <span class="method-name">Newton-Raphson Method</span>
+                        <span class="method-desc">Fast tangent-line convergence</span>
+                    </div>
+                    <span class="method-check">✓</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 3: Range / Initial Guess -->
+        <section class="card range-card" id="range-section">
+            <div class="card-header">
+                <span class="card-badge">03</span>
+                <h2 id="range-title">Set Interval Range</h2>
+            </div>
+
+            <!-- Bisection range inputs -->
+            <div class="range-inputs" id="bisection-inputs">
+                <div class="input-group compact">
+                    <label for="range-a">Lower bound (a) <span style="font-size:0.75rem; opacity:0.65; font-weight:400;">(optional)</span></label>
+                    <input type="number" id="range-a" placeholder="auto-detect or enter e.g. 1" step="any">
+                </div>
+                <div class="range-separator" style="padding-bottom: 22px;">to</div>
+                <div class="input-group compact">
+                    <label for="range-b">Upper bound (b) <span style="font-size:0.75rem; opacity:0.65; font-weight:400;">(optional)</span></label>
+                    <input type="number" id="range-b" placeholder="auto-detect or enter e.g. 3" step="any">
+                </div>
+            </div>
+
+            <!-- Newton initial guess -->
+            <div class="range-inputs hidden" id="newton-inputs">
+                <div class="input-group compact" style="flex:1">
+                    <label for="initial-guess">Initial guess (x₀) <span style="font-size:0.75rem; opacity:0.65; font-weight:400;">(optional)</span></label>
+                    <input type="number" id="initial-guess" placeholder="auto-detect or enter e.g. 2" step="any">
+                </div>
+            </div>
+
+            <!-- Advanced options toggle -->
+            <div class="advanced-toggle" id="advanced-toggle">
+                <button class="toggle-btn" id="toggle-advanced-btn">
+                    <span>Advanced Options</span>
+                    <svg class="chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="advanced-options hidden" id="advanced-options">
+                <div class="input-group compact">
+                    <label for="tolerance">Tolerance (ε)</label>
+                    <input type="number" id="tolerance" value="0.0001" step="any" min="0">
+                </div>
+                <div class="input-group compact">
+                    <label for="max-iter">Max iterations</label>
+                    <input type="number" id="max-iter" value="50" step="1" min="1" max="200">
+                </div>
+            </div>
+        </section>
+
+        <!-- Compute Button -->
+        <button class="compute-btn" id="compute-btn">
+            <span class="compute-text">Find Root</span>
+            <span class="compute-icon">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M4 10H16M12 6L16 10L12 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+        </button>
+
+        <!-- Error Banner -->
+        <div class="error-banner hidden" id="error-banner">
+            <div class="error-icon">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="2"/>
+                    <line x1="11" y1="7" x2="11" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="11" cy="15.5" r="1.2" fill="currentColor"/>
+                </svg>
+            </div>
+            <span id="error-text">Something went wrong.</span>
+        </div>
+
+        <!-- Results Section -->
+        <section class="card results-card hidden" id="results-section">
+            <div class="card-header">
+                <span class="card-badge result-badge">✦</span>
+                <h2>Iteration Table</h2>
+            </div>
+
+            <div class="results-meta" id="results-meta"></div>
+
+            <div class="table-wrapper" id="table-wrapper">
+                <table id="results-table">
+                    <thead id="table-head"></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Final Answer -->
+            <div class="answer-box" id="answer-box">
+                <div class="answer-label">Approximate Root</div>
+                <div class="answer-value" id="answer-value">—</div>
+                <div class="answer-detail" id="answer-detail"></div>
+            </div>
+        </section>
+
+        <footer class="footer" id="app-footer">
+            <p>Built with numerical precision · Bisection &amp; Newton-Raphson Methods</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
