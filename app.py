@@ -37,10 +37,9 @@ def safe_eval(f, val):
 
 
 def find_bisection_interval(f_lambda):
-    """Scan values of x outward to find an interval [a, b] where f(a)*f(b) < 0."""
-    points = [0.0]
-    steps = [0.1, 0.2, 0.5, 1.0, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0, 50.0, 100.0]
-    for step in steps:
+    """Scan integer values of x outward to find an interval [a, b] where f(a)*f(b) < 0."""
+    points = [0]
+    for step in range(1, 101):
         points.append(step)
         points.append(-step)
     
@@ -51,40 +50,37 @@ def find_bisection_interval(f_lambda):
         val = safe_eval(f_lambda, p)
         if val is not None and not math.isnan(val) and not math.isinf(val):
             if abs(val) < 1e-12:
-                # Exact or extremely close to root, return a range around it
-                # Check 1.0 step
-                val_left = safe_eval(f_lambda, p - 1.0)
-                val_right = safe_eval(f_lambda, p + 1.0)
-                if val_left is not None and val_right is not None and val_left * val_right < 0:
-                    return p - 1.0, p + 1.0
-                # Check 0.1 step
-                val_left = safe_eval(f_lambda, p - 0.1)
-                val_right = safe_eval(f_lambda, p + 0.1)
-                if val_left is not None and val_right is not None and val_left * val_right < 0:
-                    return p - 0.1, p + 0.1
-                # Fallback range
-                return p - 1.0, p + 1.0
+                # Exact root at an integer, return a range around it
+                return p - 1, p + 1
             evals.append((p, val))
             
-    # Search for any adjacent points with opposite signs
+    # Search for adjacent integers with opposite signs
     for i in range(len(evals) - 1):
         x1, y1 = evals[i]
         x2, y2 = evals[i+1]
-        if y1 * y2 < 0:
+        if y1 * y2 < 0 and x2 - x1 == 1:
             return x1, x2
             
     return None, None
 
 
 def find_initial_guess(f_lambda):
-    """Automatically find an initial guess x0 for Newton-Raphson method."""
+    """Automatically find an integer initial guess x0 for Newton-Raphson method."""
     a, b = find_bisection_interval(f_lambda)
     if a is not None and b is not None:
-        return (a + b) / 2.0
+        fa = safe_eval(f_lambda, a)
+        fb = safe_eval(f_lambda, b)
+        if fa is not None and fb is not None:
+            return a if abs(fa) < abs(fb) else b
+        return a
     
-    # Otherwise, check a range of points and find the one that minimizes |f(x)|
-    test_points = [0.0, 1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 5.0, -5.0, 10.0, -10.0]
-    best_x = 0.0
+    # Otherwise, check integer points and find the one that minimizes |f(x)|
+    test_points = [0]
+    for step in range(1, 51):
+        test_points.append(step)
+        test_points.append(-step)
+        
+    best_x = 0
     best_val = float('inf')
     for x in test_points:
         val = safe_eval(f_lambda, x)
