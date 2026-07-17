@@ -146,6 +146,70 @@ def bisection(f_lambda, a, b, tol, max_iter):
     return rows, (a + b) / 2.0, False, f"Did not converge within {max_iter} iterations. Best approximation returned."
 
 # ---------------------------------------------------------------------------
+# False Position (Regula Falsi) Method
+# ---------------------------------------------------------------------------
+
+def false_position(f_lambda, a, b, tol, max_iter):
+    """
+    False Position (Regula Falsi) root-finding method.
+    Returns (table_rows, root, converged, message).
+    """
+    fa = safe_eval(f_lambda, a)
+    fb = safe_eval(f_lambda, b)
+
+    if fa is None or fb is None:
+        return [], None, False, "Cannot evaluate the function at one or both endpoints."
+
+    if fa * fb > 0:
+        return [], None, False, (
+            f"Invalid range: f({a}) = {fa:.6g} and f({b}) = {fb:.6g} have the same sign. "
+            "The False Position method requires f(a) and f(b) to have opposite signs."
+        )
+
+    rows = []
+    c_old = None
+
+    for i in range(1, max_iter + 1):
+        fa_val = safe_eval(f_lambda, a)
+        fb_val = safe_eval(f_lambda, b)
+
+        if fa_val is None or fb_val is None:
+            return rows, None, False, "Cannot evaluate f(a) or f(b)."
+
+        if abs(fb_val - fa_val) < 1e-15:
+            return rows, None, False, "f(b) - f(a) is zero; division by zero in False Position formula."
+
+        c = (a * fb_val - b * fa_val) / (fb_val - fa_val)
+        fc = safe_eval(f_lambda, c)
+        if fc is None:
+            return rows, None, False, f"Cannot evaluate f({c})."
+
+        error = abs(c - c_old) if c_old is not None else abs(b - a)
+
+        rows.append({
+            'iter': i,
+            'a': round(a, 10),
+            'b': round(b, 10),
+            'c': round(c, 10),
+            'fa': round(fa_val, 10),
+            'fb': round(fb_val, 10),
+            'fc': round(fc, 10),
+            'error': round(error, 10),
+        })
+
+        if abs(fc) < 1e-15 or error < tol:
+            return rows, c, True, f"Converged after {i} iterations."
+
+        c_old = c
+
+        if fa_val * fc < 0:
+            b = c
+        else:
+            a = c
+
+    return rows, c_old, False, f"Did not converge within {max_iter} iterations. Best approximation returned."
+
+# ---------------------------------------------------------------------------
 # Newton-Raphson Method
 # ---------------------------------------------------------------------------
 
@@ -254,6 +318,29 @@ def solve():
         columns = ['iter', 'a', 'b', 'c', 'fa', 'fb', 'fc', 'error']
         headers = ['n', 'a', 'b', 'c = (a+b)/2', 'f(a)', 'f(b)', 'f(c)', '|Error|']
 
+    elif method == 'false_position':
+        a_val = data.get('a')
+        b_val = data.get('b')
+        
+        if a_val is None or a_val == "" or b_val is None or b_val == "":
+            a, b = find_bisection_interval(f)
+            if a is None or b is None:
+                return jsonify({'success': False, 'error': 'Could not automatically find an interval where the function changes sign. Please specify a range manually.'}), 400
+            auto_detected = True
+        else:
+            try:
+                a, b = float(a_val), float(b_val)
+                auto_detected = False
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Lower and upper bounds must be numeric.'}), 400
+            
+            if a >= b:
+                return jsonify({'success': False, 'error': 'Lower bound (a) must be less than upper bound (b).'}), 400
+
+        rows, root, converged, message = false_position(f, a, b, tol, max_iter)
+        columns = ['iter', 'a', 'b', 'c', 'fa', 'fb', 'fc', 'error']
+        headers = ['n', 'a', 'b', 'c (false position)', 'f(a)', 'f(b)', 'f(c)', '|Error|']
+
     elif method == 'newton':
         x0_val = data.get('x0')
         if x0_val is None or x0_val == "":
@@ -293,7 +380,7 @@ def solve():
         'auto_detected': auto_detected
     }
 
-    if method == 'bisection':
+    if method in ('bisection', 'false_position'):
         result['a'] = a
         result['b'] = b
     elif method == 'newton':

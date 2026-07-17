@@ -11,6 +11,7 @@
     const previewExpr     = document.getElementById('preview-expr');
     const previewStatus   = document.getElementById('preview-status');
     const btnBisection    = document.getElementById('btn-bisection');
+    const btnFalsePosition = document.getElementById('btn-falseposition');
     const btnNewton       = document.getElementById('btn-newton');
     const bisectionInputs = document.getElementById('bisection-inputs');
     const newtonInputs    = document.getElementById('newton-inputs');
@@ -34,9 +35,10 @@
     function selectMethod(method) {
         selectedMethod = method;
         btnBisection.classList.toggle('active', method === 'bisection');
+        btnFalsePosition.classList.toggle('active', method === 'false_position');
         btnNewton.classList.toggle('active', method === 'newton');
 
-        if (method === 'bisection') {
+        if (method === 'bisection' || method === 'false_position') {
             bisectionInputs.classList.remove('hidden');
             newtonInputs.classList.add('hidden');
             rangeTitle.textContent = 'Set Interval Range';
@@ -48,6 +50,7 @@
     }
 
     btnBisection.addEventListener('click', () => selectMethod('bisection'));
+    btnFalsePosition.addEventListener('click', () => selectMethod('false_position'));
     btnNewton.addEventListener('click', () => selectMethod('newton'));
 
     // ---- Advanced Options Toggle ----
@@ -122,7 +125,7 @@
             maxIter,
         };
 
-        if (selectedMethod === 'bisection') {
+        if (selectedMethod === 'bisection' || selectedMethod === 'false_position') {
             const aVal = document.getElementById('range-a').value.trim();
             const bVal = document.getElementById('range-b').value.trim();
             if (aVal !== '') payload.a = parseFloat(aVal);
@@ -151,7 +154,7 @@
 
             // Fill auto-detected values back in the UI inputs
             if (data.auto_detected) {
-                if (data.method === 'bisection') {
+                if (data.method === 'bisection' || data.method === 'false_position') {
                     document.getElementById('range-a').value = data.a;
                     document.getElementById('range-b').value = data.b;
                 } else if (data.method === 'newton') {
@@ -171,12 +174,15 @@
     // ---- Render Results ----
     function renderResults(data) {
         // Meta tags
-        const methodLabel = data.method === 'bisection' ? 'Bisection' : 'Newton-Raphson';
+        let methodLabel = 'Bisection';
+        if (data.method === 'false_position') methodLabel = 'False Position';
+        else if (data.method === 'newton') methodLabel = 'Newton-Raphson';
+
         let metaHTML = `
             <span class="meta-tag"><span class="tag-label">Method</span> ${methodLabel}</span>
             <span class="meta-tag"><span class="tag-label">f(x)</span> ${escapeHTML(data.equation)}</span>
         `;
-        if (data.method === 'bisection') {
+        if (data.method === 'bisection' || data.method === 'false_position') {
             metaHTML += `<span class="meta-tag"><span class="tag-label">Interval [a, b]</span> [${formatNum(data.a, 6)}, ${formatNum(data.b, 6)}]</span>`;
         } else {
             metaHTML += `<span class="meta-tag"><span class="tag-label">Initial Guess (x₀)</span> ${formatNum(data.x0, 6)}</span>`;
