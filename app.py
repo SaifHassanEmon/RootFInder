@@ -339,7 +339,7 @@ def solve():
 
         rows, root, converged, message = false_position(f, a, b, tol, max_iter)
         columns = ['iter', 'a', 'b', 'c', 'fa', 'fb', 'fc', 'error']
-        headers = ['n', 'a', 'b', 'c (false position)', 'f(a)', 'f(b)', 'f(c)', '|Error|']
+        headers = ['n', 'a', 'b', 'c = (a*f(b) - b*f(a)) / (f(b) - f(a))', 'f(a)', 'f(b)', 'f(c)', '|Error|']
 
     elif method == 'newton':
         x0_val = data.get('x0')
@@ -363,7 +363,7 @@ def solve():
 
         rows, root, converged, message = newton_raphson(f, fp, x0, tol, max_iter)
         columns = ['iter', 'xn', 'fxn', 'fpxn', 'xn1', 'error']
-        headers = ['n', 'xₙ', 'f(xₙ)', "f'(xₙ)", 'xₙ₊₁', '|Error|']
+        headers = ['n', 'xₙ', 'f(xₙ)', "f'(xₙ)", 'xₙ₊₁ = xₙ - f(xₙ)/f\'(xₙ)', '|Error|']
     else:
         return jsonify({'success': False, 'error': 'Unknown method.'}), 400
 
